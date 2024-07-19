@@ -45,6 +45,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=250, unique=True)
     profile_picture = models.ImageField(upload_to='users/%Y/%m/%d/', blank=True, null=True)
     coupon_balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    categories_bought = models.JSONField(default=dict)
 
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
