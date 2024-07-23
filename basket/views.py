@@ -34,5 +34,5 @@ class BasketDetailView(APIView):
     def get(self, request, *args, **kwargs):
         basket = Basket(request)
         basket_items = basket.get_basket_items()
-        serializer = BasketItemSerializer(basket_items, many=True)  # Изменено здесь
+        serializer = BasketItemSerializer(basket_items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

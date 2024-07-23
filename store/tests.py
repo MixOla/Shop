@@ -107,3 +107,29 @@ class StoreTest(APITestCase):
 
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_comment_partial_update(self):
+        self.setup()
+        comment = Comment.objects.create(author=self.user, body='Comment body',
+                                         goods=self.goods, rating=5)
+        url = reverse('store:comment_edit', args=[comment.id])
+        data = {
+            'body': 'Some other comment body',
+            'rating': 5
+        }
+
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        comment.refresh_from_db()
+        for key in data:
+            self.assertEqual(getattr(comment, key), data[key])
+
+    def test_comment_delete(self):
+        self.setup()
+        comment = Comment.objects.create(author=self.user, body='Comment body',
+                                         goods=self.goods, rating=5)
+        url = reverse('store:comment_edit', args=[comment.id])
+        
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertQuerySetEqual(Comment.objects.all(), [])

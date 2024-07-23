@@ -14,21 +14,34 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['author', 'body', 'goods', 'rating', 'created', 'updated']
+        fields = ['id', 'author', 'body', 'goods', 'rating', 'created', 'updated']
 
     def create(self, validated_data):
         author_id = self.context['request'].user.id
         author = get_user_model().objects.get(id=author_id)
         comment = Comment.objects.create(author=author, **validated_data)
         return comment
-
+    
+    def update(self, instance, validated_data):
+        validated_data.pop('goods', None)
+        return super().update(instance, validated_data)
+    
+    def to_representation(self, instance):
+        '''
+        т.к используем данный сериализатор для чтения в том числе, то удаляем goods
+        т.к данный сериализатор будет вложенным в сериализатор для объекта Goods
+        '''
+        ret = super().to_representation(instance)
+        ret.pop('goods')
+        return ret
+    
 
 class GoodsListSerializer(serializers.ModelSerializer):
     available = serializers.SerializerMethodField()
 
     class Meta:
         model = Goods
-        fields = ['image', 'title', 'price', 'rating', 'available']
+        fields = ['id', 'image', 'title', 'price', 'rating', 'available']
 
     def get_available(self, obj):
         if obj.amount >= 1:
