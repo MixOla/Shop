@@ -4,6 +4,7 @@ from .models import Category, Goods, Comment
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from . import serializers
+from orders.models import Order, OrderItem
 
 
 def create_category(title):
@@ -35,6 +36,11 @@ class StoreTest(APITestCase):
             password=self.password,
             categories_bought={self.category.title: 3, self.category2.title: 1}
         )
+
+        self.order = Order.objects.create(user=self.user, status='succeeded')
+        self.order_item = OrderItem.objects.create(order=self.order, goods=self.goods,
+                                                   price=self.goods.price, amount=self.goods.amount)
+
         if auth_required:
             is_authenticated = self.client.login(email=self.email,
                                                  password=self.password)

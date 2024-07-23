@@ -7,7 +7,7 @@ from rest_framework import mixins
 from django.db.models import Case, When
 from django.contrib.auth import get_user_model
 from .models import Category, Goods, Comment
-from .permissions import IsAuthor # IsGoodsBoughtByUser
+from .permissions import IsAuthor, IsGoodsBoughtByUser
 from .generics_views import UpdateDestroyAPIView
 from . import serializers
 
@@ -107,7 +107,7 @@ class GoodsDetailView(generics.RetrieveAPIView):
 
 class CommentCreateView(generics.CreateAPIView):
     serializer_class = serializers.CommentSerializer
-    permission_classes = [IsAuthenticated] #, IsGoodsBoughtByUser() ]
+    permission_classes = [IsAuthenticated, IsGoodsBoughtByUser]
 
 
 class CommentUpdateDeleteView(UpdateDestroyAPIView):
@@ -116,7 +116,7 @@ class CommentUpdateDeleteView(UpdateDestroyAPIView):
 
     def get_permissions(self):
         if self.request.method in ['PUT', 'PATCH']:
-            return [IsAuthenticated()] #, IsGoodsBoughtByUser() ]
+            return [IsAuthenticated(), IsGoodsBoughtByUser()]
         elif self.request.method == 'DELETE':
             return [IsAuthenticated(), IsAuthor()]
         return []

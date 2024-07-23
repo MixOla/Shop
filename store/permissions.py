@@ -1,16 +1,16 @@
 from rest_framework import permissions
 from django.contrib.auth import get_user_model
-# from orders.models import Item
+from orders.models import OrderItem
 
-'''
+
 class IsGoodsBoughtByUser(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        return Item.objects.filter(
-            order__author_id=request.user.id,
+        return OrderItem.objects.filter(
+            order__user_id=request.user.id,
             order__status='succeeded',
-            goods_id=obj.id
+            goods_id=obj.goods.id
         ).exists()
-'''
+
     
 
 class IsAuthor(permissions.BasePermission):
