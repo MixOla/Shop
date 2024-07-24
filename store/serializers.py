@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Goods, Comment
+from .models import Category, Goods, Comment, PriceHistory
 from django.contrib.auth import get_user_model
 
 
@@ -36,6 +36,12 @@ class CommentSerializer(serializers.ModelSerializer):
         return ret
     
 
+class PriceHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PriceHistory
+        fields = '__all__'
+
+
 class GoodsListSerializer(serializers.ModelSerializer):
     available = serializers.SerializerMethodField()
 
@@ -51,6 +57,7 @@ class GoodsListSerializer(serializers.ModelSerializer):
 
 class GoodsDetailSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(many=True, read_only=True)
+    price_history = PriceHistorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Goods

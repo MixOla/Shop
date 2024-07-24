@@ -116,7 +116,7 @@ class CommentUpdateDeleteView(UpdateDestroyAPIView):
 
     def get_permissions(self):
         if self.request.method in ['PUT', 'PATCH']:
-            return [IsAuthenticated(), IsGoodsBoughtByUser()]
+            return [IsAuthenticated(), IsAuthor()]
         elif self.request.method == 'DELETE':
             return [IsAuthenticated(), IsAuthor()]
         return []

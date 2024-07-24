@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
-from .models import Category, Goods, Comment
+from .models import Category, Goods, Comment, PriceHistory
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from . import serializers
@@ -12,6 +12,14 @@ def create_category(title):
 
 
 class StoreTest(APITestCase):
+    def user_create(self, email='testuseremail@test.com', name='Test User',
+                    password='89h2fffnw', auth_required=True):
+        
+        user = get_user_model().objects.create_user(email=email, name=name, password=password)
+        is_authenticated = self.client.login(email=email, password=password)
+        self.assertTrue(is_authenticated)
+        return user
+
     def setup(self, auth_required=True):
         self.category = Category.objects.create(title='First Category')
         self.category2 = Category.objects.create(title='Second Category')
@@ -102,6 +110,16 @@ class StoreTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json(), serializers.GoodsDetailSerializer(self.goods).data)
 
+    def test_goods_price_history(self):
+        self.setup(auth_required=False)
+        self.assertEqual(len(PriceHistory.objects.all()), 4)
+        self.goods.price = 100
+        self.goods.save()
+        query = PriceHistory.objects.filter(goods=self.goods)
+        self.assertEqual(len(query), 2)
+        self.assertEqual(query[0].price, self.goods.price)
+        self.assertEqual(len(serializers.GoodsDetailSerializer(self.goods).data['price_history']), 2)
+
     def test_comment_create(self):
         self.setup()
         url = reverse('store:comment_create', args=[self.goods.id])
@@ -113,6 +131,8 @@ class StoreTest(APITestCase):
 
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.goods.refresh_from_db()
+        self.assertEqual(self.goods.rating, 5)
 
     def test_comment_partial_update(self):
         self.setup()
@@ -121,14 +141,37 @@ class StoreTest(APITestCase):
         url = reverse('store:comment_edit', args=[comment.id])
         data = {
             'body': 'Some other comment body',
-            'rating': 5
+            'rating': 3
         }
+        full_data = {'goods': self.goods4.id, **data}
 
-        response = self.client.patch(url, data)
+        response = self.client.patch(url, full_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         comment.refresh_from_db()
+        
+        self.goods.refresh_from_db()
+        self.assertEqual(self.goods.rating, 3)
+
         for key in data:
             self.assertEqual(getattr(comment, key), data[key])
+        self.assertNotEqual(comment.goods.id, full_data['goods'])
+        self.assertEqual(comment.goods.id, self.goods.id)
+
+    def test_comment_partial_update_forbidden(self):
+        self.setup(auth_required=False)
+        user = self.user_create()
+        comment = Comment.objects.create(author=self.user, body='Comment body',
+                                         goods=self.goods, rating=5)
+        url = reverse('store:comment_edit', args=[comment.id])
+        data = {
+            'body': 'Some other comment body',
+            'rating': 5
+        }
+        
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        comment.refresh_from_db()
+        self.assertNotEqual(comment.body, data['body'])
 
     def test_comment_delete(self):
         self.setup()
@@ -139,3 +182,5 @@ class StoreTest(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertQuerySetEqual(Comment.objects.all(), [])
+        self.goods.refresh_from_db()
+        self.assertEqual(self.goods.rating, 0)
